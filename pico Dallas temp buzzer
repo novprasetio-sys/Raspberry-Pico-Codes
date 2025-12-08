@@ -1,105 +1,100 @@
-# main.py
-
-import network
-import urequests
-import dht
-import time
-
-# Inisialisasi pin
-dht_pin = 2
-dht_sensor = dht.DHT11(machine.Pin(dht_pin))
-
-# Inisialisasi WiFi
-wifi = network.WLAN(network.STA_IF)
-wifi.active(True)
-wifi.connect('SSID', 'PASSWORD')
-
-# Inisialisasi Thingspeak
-thingspeak_api_key = 'YOUR_API_KEY'
-thingspeak_url = 'https://api.thingspeak.com/update?api_key=' + thingspeak_api_key
-
-while True:
-    try:
-        # Baca data DHT11
-        dht_sensor.measure()
-        temperature = dht_sensor.temperature()
-        humidity = dht_sensor.humidity()
-        
-        # Kirim data ke Thingspeak
-        url = thingspeak_url + '&field1=' + str(temperature) + '&field2=' + str(humidity)
-        urequests.get(url)
-        
-        print('Temperature:', temperature, 'C')
-        print('Humidity:', humidity, '%')
-    except Exception as e:
-        print('Error:', e)
-    time.sleep(15)
-
-# dht.py
+# OneWire.py
 
 import machine
-import time
 
-class DHT:
+class OneWire:
     def __init__(self, pin):
         self.pin = machine.Pin(pin, machine.Pin.OUT)
         self.pin.value(1)
 
-    def measure(self):
-        # Kirim sinyal start
+    def reset(self):
         self.pin.value(0)
-        time.sleep_ms(18)
+        time.sleep_us(480)
         self.pin.value(1)
-        time.sleep_us(40)
+        time.sleep_us(70)
+        return self.pin.value() == 0
 
-        # Baca data
-        self.pin.init(machine.Pin.IN)
-        data = []
-        for i in range(40):
-            while self.pin.value() == 1:
-                pass
-            time.sleep_us(50)
-            if self.pin.value() == 1:
-                data.append(1)
-            else:
-                data.append(0)
-            while self.pin.value() == 0:
-                pass
-
-        # Konversi data
-        humidity = 0
-        temperature = 0
+    def write_byte(self, byte):
         for i in range(8):
-            humidity = (humidity << 1) | data[i]
-        for i in range(8, 16):
-            temperature = (temperature << 1) | data[i]
-        for i in range(16, 24):
-            humidity = (humidity << 1) | data[i]
-        for i in range(24, 32):
-            temperature = (temperature << 1) | data[i]
-        checksum = 0
-        for i in range(32, 40):
-            checksum = (checksum << 1) | data[i]
+            self.pin.value(0)
+            time.sleep_us(10)
+            self.pin.value((byte >> i) & 1)
+            time.sleep_us(50)
+            self.pin.value(1)
+            time.sleep_us(10)
 
-        # Cek checksum
-        if (humidity + temperature) & 0xFF != checksum:
-            raise Exception('Checksum error')
+    def read_byte(self):
+        byte = 0
+        for i in range(8):
+            self.pin.value(0)
+            time.sleep_us(10)
+            self.pin.value(1)
+            time.sleep_us(10)
+            byte |= self.pin.value() << i
+            time.sleep_us(50)
+        return byte
 
-        self.humidity = humidity / 10.0
-        self.temperature = temperature / 10.0
+# ds18x20.py
 
-    def temperature(self):
-        return self.temperature
+import onewire
+import time
 
-    def humidity(self):
-        return self.humidity
+class DS18X20:
+    def __init__(self, onewire):
+        self.ow = onewire
+        self.roms = []
 
-class DHT11(DHT):
-    def __init__(self, pin):
-        super().__init__(pin)
+    def scan(self):
+        self.ow.reset()
+        self.ow.write_byte(0xF0)
+        rom = bytearray(8)
+        for i in range(8):
+            rom[i] = self.ow.read_byte()
+        self.roms = [rom]
+        return self.roms
 
-class DHT22(DHT):
-    def __init__(self, pin):
-        super().__init__(pin)
-        self.temperature_scale = -1 if self.temperature < 0 else 1
-        self.temperature = self.temperature * self.temperature_scale
+    def convert_temp(self):
+        self.ow.reset()
+        self.ow.write_byte(0xCC)
+        self.ow.write_byte(0x44)
+
+    def read_temp(self, rom):
+        self.ow.reset()
+        self.ow.write_byte(0xCC)
+        self.ow.write_byte(0xBE)
+        data = bytearray(9)
+        for i in range(9):
+            data[i] = self.ow.read_byte()
+        temp_lsb = data[0]
+        temp_msb = data[1]
+        temp = (temp_msb << 8 | temp_lsb) / 16
+        return temp
+
+#main.py
+
+import machine
+import time
+import onewire
+import ds18x20
+
+# Inisialisasi pin
+ds_pin = machine.Pin(2)  # Pin untuk sensor DS18B20
+relay_pin = machine.Pin(3, machine.Pin.OUT)  # Pin untuk relay
+ds_sensor = ds18x20.DS18X20(onewire.OneWire(ds_pin))
+
+while True:
+    try:
+        # Baca data DS18B20
+        roms = ds_sensor.scan()
+        ds_sensor.convert_temp()
+        time.sleep_ms(750)
+        temperature = ds_sensor.read_temp(roms[0])
+        
+        # Hidupkan pin jika temperatur >= 35°C
+        if temperature >= 35:
+            relay_pin.value(1)
+        else:
+            relay_pin.value(0)
+    except Exception as e:
+        print('Error:', e)
+    time.sleep(1)
