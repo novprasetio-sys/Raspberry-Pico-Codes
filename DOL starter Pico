@@ -1,0 +1,57 @@
+import machine
+import time
+
+# Inisialisasi pin
+toggle_switch_pin = machine.Pin(2, machine.Pin.IN, machine.Pin.PULL_UP)
+overload_pin = machine.Pin(3, machine.Pin.IN, machine.Pin.PULL_UP)
+relay_pin = machine.Pin(4, machine.Pin.OUT)
+
+# Inisialisasi state
+relay_state = False
+
+def toggle_relay():
+    global relay_state
+    relay_state = not relay_state
+    relay_pin.value(relay_state)
+
+while True:
+    if toggle_switch_pin.value() == 0:
+        toggle_relay()
+        time.sleep(0.5)  # Debounce
+    if overload_pin.value() == 0:
+        relay_pin.value(0)
+        relay_state = False
+        print("Overload detected!")
+    time.sleep(0.1)
+
+
+# alternatif kode
+
+import machine
+import time
+
+# Inisialisasi pin
+toggle_switch_pin = machine.Pin(2, machine.Pin.IN, machine.Pin.PULL_UP)
+overload_pin = machine.Pin(3, machine.Pin.IN, machine.Pin.PULL_UP)
+relay_pin = machine.Pin(4, machine.Pin.OUT)
+
+# Inisialisasi state
+relay_state = False
+last_toggle_state = 1
+
+def toggle_relay():
+    global relay_state
+    relay_state = not relay_state
+    relay_pin.value(relay_state)
+
+while True:
+    current_toggle_state = toggle_switch_pin.value()
+    if current_toggle_state == 0 and last_toggle_state == 1:
+        toggle_relay()
+        time.sleep(0.1)  # Debounce
+    last_toggle_state = current_toggle_state
+    if overload_pin.value() == 0:
+        relay_pin.value(0)
+        relay_state = False
+        print("Overload detected!")
+    time.sleep(0.01)
