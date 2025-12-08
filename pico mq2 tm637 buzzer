@@ -1,0 +1,85 @@
+# Simpan file ini dengan nama tm1637.py
+
+import machine
+
+class TM1637:
+    def __init__(self, clk, dio):
+        self.clk = machine.Pin(clk, machine.Pin.OUT)
+        self.dio = machine.Pin(dio, machine.Pin.OUT)
+        self.clk.value(0)
+        self.dio.value(0)
+
+    def _start(self):
+        self.dio.value(1)
+        self.clk.value(1)
+        self.dio.value(0)
+        self.clk.value(0)
+
+    def _stop(self):
+        self.dio.value(0)
+        self.clk.value(1)
+        self.dio.value(1)
+
+    def _write_byte(self, byte):
+        for i in range(8):
+            self.dio.value((byte >> i) & 1)
+            self.clk.value(1)
+            self.clk.value(0)
+
+    def show(self, string):
+        self._start()
+        self._write_byte(0x40)
+        self._stop()
+        self._start()
+        self._write_byte(0xc0)
+        for char in string:
+            if char == ' ':
+                self._write_byte(0x00)
+            elif char == '-':
+                self._write_byte(0x40)
+            elif char == '0':
+                self._write_byte(0x3f)
+            elif char == '1':
+                self._write_byte(0x06)
+            elif char == '2':
+                self._write_byte(0x5b)
+            elif char == '3':
+                self._write_byte(0x4f)
+            elif char == '4':
+                self._write_byte(0x66)
+            elif char == '5':
+                self._write_byte(0x6d)
+            elif char == '6':
+                self._write_byte(0x7d)
+            elif char == '7':
+                self._write_byte(0x07)
+            elif char == '8':
+                self._write_byte(0x7f)
+            elif char == '9':
+                self._write_byte(0x6f)
+        self._stop()
+
+
+
+#simpan file ini dengan main.py
+
+import machine
+import time
+from tm1637 import TM1637
+
+# Inisialisasi pin
+mq2 = machine.ADC(26)  # Pin analog untuk sensor MQ2
+tm = TM1637(clk=machine.Pin(5), dio=machine.Pin(6))
+buzzer = machine.Pin(4, machine.Pin.OUT)
+
+def get_mq2_value():
+    return mq2.read_u16()
+
+while True:
+    mq2_value = get_mq2_value()
+    tm.show(str(mq2_value))
+    if mq2_value > 30000:  # Threshold untuk mengaktifkan buzzer
+        buzzer.value(1)
+    else:
+        buzzer.value(0)
+    time.sleep(0.1)
