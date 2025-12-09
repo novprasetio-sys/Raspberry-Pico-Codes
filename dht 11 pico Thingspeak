@@ -1,0 +1,51 @@
+import network
+import urequests
+import time
+import machine
+import dht
+
+# ======= WiFi setup =======
+SSID = 'nama_wifi'
+PASSWORD = 'password_wifi'
+
+wlan = network.WLAN(network.STA_IF)
+wlan.active(True)
+wlan.connect(SSID, PASSWORD)
+
+# Tunggu koneksi WiFi
+while not wlan.isconnected():
+    print("Menghubungkan WiFi...")
+    time.sleep(1)
+print("Terhubung:", wlan.ifconfig())
+
+# ======= Setup sensor =======
+dht_sensor = dht.DHT11(machine.Pin(15))  # sesuaikan pin
+
+# ======= Thingspeak API =======
+THINGSPEAK_API_KEY = 'API_KEY_KAMU'
+THINGSPEAK_URL = 'http://api.thingspeak.com/update'
+
+# ======= Fungsi kirim data =======
+def kirim_thingspeak(temp, hum):
+    url = f"{THINGSPEAK_URL}?api_key={THINGSPEAK_API_KEY}&field1={temp}&field2={hum}"
+    try:
+        response = urequests.get(url)
+        print("Status:", response.status_code)
+        response.close()
+    except Exception as e:
+        print("Gagal kirim:", e)
+
+# ======= Loop utama =======
+while True:
+    try:
+        dht_sensor.measure()
+        suhu = dht_sensor.temperature()
+        kelembapan = dht_sensor.humidity()
+        print("Suhu:", suhu, "°C, Hum:", kelembapan, "%")
+        
+        kirim_thingspeak(suhu, kelembapan)
+        
+    except Exception as e:
+        print("Error sensor:", e)
+    
+    time.sleep(20)  # update tiap 20 detik
