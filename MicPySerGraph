@@ -1,0 +1,39 @@
+# jalankan kode ini dengan python local atau pydroid
+import matplotlib.pyplot as plt
+import serial
+import time
+
+# Inisialisasi serial sesuaikan dengan com ports / OTG mikrokontroler anda
+ser = serial.Serial('COM8', 115200, timeout=1)
+
+# Inisialisasi list untuk menyimpan data
+data = []
+
+plt.ion()  # Aktifkan mode interaktif
+
+while True:
+    # Baca data dari serial
+    line = ser.readline().decode('utf-8').strip()
+    print("Dibaca:", line)
+    
+    # Coba konversi data ke float
+    try:
+        parts = line.split(':')
+        value = float(parts[-1])  # Ambil bagian terakhir setelah titik dua
+        data.append(value)
+        
+        # Tampilkan grafik
+        plt.clf()
+        plt.plot(data)
+        plt.title('Grafik Data Sensor')
+        plt.xlabel('Waktu')
+        plt.ylabel('Nilai Sensor')
+        plt.draw()
+        # sesuaikan dengan timer di mikro python adjustmen sampai nilainya sesuai
+        plt.pause(0.05)
+        
+    except ValueError:
+        print("Data tidak valid:", line)
+
+# Tutup serial
+ser.close()
