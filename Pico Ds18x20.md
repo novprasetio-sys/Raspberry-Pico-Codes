@@ -73,7 +73,6 @@ class OneWire:
 
 # ds18x20.py
 
-# ds18x20.py
 
 import onewire
 import time
