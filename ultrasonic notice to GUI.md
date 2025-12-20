@@ -1,39 +1,18 @@
-# MicPySer Interaktif: Monitor Jarak dengan Pico & Python GUI
-
-Proyek ini menggunakan Raspberry Pi Pico (MicroPython) untuk membaca sensor ultrasonik HC-SR04 dan mengirim data jarak ke PC. GUI Python (Tkinter) menampilkan jarak realtime dengan indikator LED dan notifikasi interaktif.
-
-## Fitur
-- Baca jarak HC-SR04 via Pico
-- GUI interaktif di PC (Tkinter)
-- Indikator LED (hijau/merah)
-- Notifikasi "Jarak Terlalu Dekat!" jika <= 5 cm
-- Tombol Reconnect serial
-
-## Struktur Proyek
-- `pico_code.py`: Kode MicroPython untuk Pico
-- `gui_interaktif.py`: Kode Python GUI di PC
-- `README.md`: Dokumentasi proyek
-
-## Cara Pakai
-1. Upload `pico_code.py` ke Pico.
-2. Sambungkan HC-SR04 dan buzzer ke Pico.
-3. Jalankan `gui_interaktif.py` di PC.
-4. Lihat jarak realtime dan notifikasi di GUI.
-
-## Koneksi
-- Pico -> PC via USB (Serial)
-- Sensor HC-SR04 -> Pico (pin 2=echo, 3=trigger)
-- Buzzer -> Pico (pin 4)
-
-## Dependensi
-- MicroPython (Pico)
-- Python 3 + Tkinter + pyserial (PC)
-
-## Screenshot GUI
-![GUI Interaktif](screenshot_gui.png) (tambah screenshot jika perlu)
-
-## main.py
-
+**Judul Artikel:**
+Membuat Sistem Monitoring Jarak Interaktif dengan Micropython dan Python
+**Konten Artikel:**
+Pendahuluan
+------------
+Sistem monitoring jarak interaktif sangat penting dalam berbagai aplikasi, seperti pengawasan jarak antara objek, pengawasan jarak antara kendaraan, dan lain-lain. Dalam artikel ini, kita akan membuat sistem monitoring jarak interaktif menggunakan Micropython dan Python.
+**Komponen yang Diperlukan:**
+* 1x Pico 16 MB untuk Micropython)
+* 1x Sensor Ultrasonik
+* 1x Buzzer
+* 1x Komputer (untuk MicPySer)
+* 1x Kabel USB
+**Kode Micropython:**
+```
+# Micropython code
 from machine import Pin, time_pulse_us
 import utime
 import time
@@ -58,11 +37,10 @@ while True:
     else:
         buzzer.value(0)
     time.sleep(0.1)
-
-
-## GUI.py
-
-
+```
+**Kode MicPySer (Python):**
+```
+# python code
 import tkinter as tk
 import serial
 import time
@@ -107,7 +85,15 @@ btn_reconnect.pack(pady=10)
 
 update_gui()
 root.mainloop()
+```
+**Cara Kerja Sistem:**
+1. Sensor ultrasonik mendeteksi jarak antara objek dan mengirimkan data ke Pico.
+2. Pico menerima data jarak dan mengirimkannya ke komputer melalui serial.
+3. Python menerima data jarak dari serial dan menampilkannya di GUI.
+4. Jika jarak <= 5 cm, maka buzzer akan berbunyi dan GUI akan menampilkan notifikasi "Jarak Terlalu Dekat!".
+5. Jika jarak > 5 cm, maka buzzer akan diam dan GUI akan menampilkan notifikasi "Aman".
 
-## Author
-Novan Prasetio (MicPySer Project)
-
+**Kesimpulan:**
+Dalam artikel ini, kita telah membuat sistem monitoring jarak interaktif menggunakan Micropython dan Python. Sistem ini dapat mendeteksi jarak antara objek dan menampilkannya di GUI, serta memberikan notifikasi jika jarak terlalu dekat.
+Silakan Anda edit dan tambahkan konten sesuai kebutuhan Anda!
+Saya harap artikel ini membantu!
