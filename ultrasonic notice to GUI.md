@@ -108,7 +108,6 @@ btn_reconnect.pack(pady=10)
 update_gui()
 root.mainloop()
 
-
 ## Author
 Novan Prasetio (MicPySer Project)
 
